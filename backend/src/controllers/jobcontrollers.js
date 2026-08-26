@@ -1,66 +1,183 @@
-// backend/src/controllers/jobController.js
-import { getDatabase } from '../config/db.js';
+const connectDatabase =
+    require("../database/database");
 
-export async function createJob(req, res) {
+async function listJobs(req, res) {
+
     try {
-        const { title, company, location, description, salary } = req.body;
-        const db = await getDatabase();
-        const result = await db.run(
-            'INSERT INTO jobs (title, company, location, description, salary) VALUES (?, ?, ?, ?, ?)',
-            [title, company, location, description, salary]
+
+        const db = await connectDatabase();
+
+        const search =
+            req.query.search || "";
+
+        const location =
+            req.query.location || "";
+
+        const jobs = await db.all(
+            `SELECT *
+             FROM jobs
+             WHERE
+             (title LIKE ? OR description LIKE ?)
+             AND location LIKE ?
+             ORDER BY created_at DESC`,
+            [
+                `%${search}%`,
+                `%${search}%`,
+                `%${location}%`
+            ]
         );
-        res.status(201).json({ id: result.lastID, title, company, location, description, salary });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+
+        await db.close();
+
+        res.json(jobs);
+
+    } catch (error) {
+
+        res.status(500).json({
+            message: "Failed to fetch jobs"
+        });
     }
 }
 
-export async function updateJob(req, res) {
-    try {
-        const { id } = req.params;
-        const { title, company, location, description, salary } = req.body;
-        const db = await getDatabase();
-        await db.run(
-            'UPDATE jobs SET title = ?, company = ?, location = ?, description = ?, salary = ? WHERE id = ?',
-            [title, company, location, description, salary, id]
-        );
-        res.status(200).json({ message: "Job post modified successfully." });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+async function getJob(req, res) {
+
+    const db = await connectDatabase();
+
+    const job = await db.get(
+        "SELECT * FROM jobs WHERE id = ?",
+        [req.params.id]
+    );
+
+    await db.close();
+
+    if (!job) {
+
+        return res.status(404).json({
+            message: "Job not found"
+        });
     }
+
+    res.json(job);
 }
 
-export async function deleteJob(req, res) {
-    try {
-        const { id } = req.params;
-        const db = await getDatabase();
-        await db.run('DELETE FROM jobs WHERE id = ?', [id]);
-        res.status(200).json({ message: "Job post eliminated successfully." });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-}
-export async function getJobs(req, res) {
-    try {
-        const { search, location } = req.query;
-        const db = await getDatabase();
-        
-        let query = 'SELECT * FROM jobs WHERE 1=1';
-        let params = [];
+async function createJob(req, res) {
 
-        if (search) {
-            query += ' AND (title LIKE ? OR description LIKE ?)';
-            params.push(`%${search}%`, `%${search}%`);
-        }
-        if (location) {
-            query += ' AND location LIKE ?';
-            params.push(`%${location}%`);
-        }
+    const {
+        title,
+        description,
+        company,
+        location,
+        requirements
+    } = req.body;
 
-        query += ' ORDER BY createdAt DESC';
-        const jobs = await db.all(query, params);
-        res.status(200).json(jobs);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    if (
+        !title ||
+        !description ||
+        !company ||
+        !location ||
+        !requirements
+    ) {
+
+        return res.status(400).json({
+            message: "All fields are required"
+        });
     }
+
+    const db = await connectDatabase();
+
+    const result = await db.run(
+        `INSERT INTO jobs
+        (title, description, company, location, requirements)
+        VALUES (?, ?, ?, ?, ?)`,
+        [
+            title,
+            description,
+            company,
+            location,
+            requirements
+        ]
+    );
+
+    await db.close();
+
+    res.status(201).json({
+        message: "Job created successfully",
+        id: result.lastID
+    });
 }
+
+async function updateJob(req, res) {
+
+    const {
+        title,
+        description,
+        company,
+        location,
+        requirements
+    } = req.body;
+
+    const db = await connectDatabase();
+
+    const result = await db.run(
+        `UPDATE jobs
+         SET title = ?,
+             description = ?,
+             company = ?,
+             location = ?,
+             requirements = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [
+            title,
+            description,
+            company,
+            location,
+            requirements,
+            req.params.id
+        ]
+    );
+
+    await db.close();
+
+    if (result.changes === 0) {
+
+        return res.status(404).json({
+            message: "Job not found"
+        });
+    }
+
+    res.json({
+        message: "Job updated successfully"
+    });
+}
+
+async function deleteJob(req, res) {
+
+    const db = await connectDatabase();
+
+    const result = await db.run(
+        "DELETE FROM jobs WHERE id = ?",
+        [req.params.id]
+    );
+
+    await db.close();
+
+    if (result.changes === 0) {
+
+        return res.status(404).json({
+            message: "Job not found"
+        });
+    }
+
+    res.json({
+        message: "Job deleted successfully"
+    });
+}
+
+module.exports = {
+    listJobs,
+    getJob,
+    createJob,
+    updateJob,
+    deleteJob
+};

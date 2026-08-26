@@ -1,13 +1,43 @@
-// backend/src/routes/jobRoutes.js
-import express from 'express';
-import { createJob, getJobs, updateJob, deleteJob } from '../controllers/jobController.js';
-import { protect, authorizeAdmin } from '../middleware/authMiddleware.js';
+const express = require("express");
+
+const {
+    listJobs,
+    getJob,
+    createJob,
+    updateJob,
+    deleteJob
+} = require("../controllers/jobController");
+
+const {
+    authenticate,
+    requireAdmin
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.get('/', getJobs);
-router.post('/', protect, authorizeAdmin, createJob);
-router.put('/:id', protect, authorizeAdmin, updateJob);
-router.delete('/:id', protect, authorizeAdmin, deleteJob);
+router.get("/", listJobs);
 
-export default router;
+router.get("/:id", getJob);
+
+router.post(
+    "/",
+    authenticate,
+    requireAdmin,
+    createJob
+);
+
+router.put(
+    "/:id",
+    authenticate,
+    requireAdmin,
+    updateJob
+);
+
+router.delete(
+    "/:id",
+    authenticate,
+    requireAdmin,
+    deleteJob
+);
+
+module.exports = router;

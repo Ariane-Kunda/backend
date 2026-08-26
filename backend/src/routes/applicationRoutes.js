@@ -1,11 +1,36 @@
-// backend/src/routes/applicationRoutes.js
-import express from 'express';
-import { applyToJob, getUserApplications } from '../controllers/applicationController.js';
-import { protect } from '../middleware/authMiddleware.js';
+const express = require("express");
+
+const {
+    applyForJob,
+    getApplications,
+    updateApplicationStatus
+} = require("../controllers/applicationController");
+
+const {
+    authenticate,
+    requireAdmin
+} = require("../middleware/authmiddleware");
 
 const router = express.Router();
 
-router.post('/', protect, applyToJob);
-router.get('/my-applications', protect, getUserApplications);
+router.post(
+    "/jobs/:jobId",
+    authenticate,
+    applyForJob
+);
 
-export default router;
+router.get(
+    "/",
+    authenticate,
+    requireAdmin,
+    getApplications
+);
+
+router.patch(
+    "/:id/status",
+    authenticate,
+    requireAdmin,
+    updateApplicationStatus
+);
+
+module.exports = router;

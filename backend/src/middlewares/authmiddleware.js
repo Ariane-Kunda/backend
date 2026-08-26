@@ -1,26 +1,53 @@
-// backend/src/middleware/authMiddleware.js
-import jwt from 'jsonwebtoken';
+const jwt = require("jsonwebtoken");
 
-export function protect(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: "Authorization denied. Token missing." });
+function authenticate(req, res, next) {
+
+    const authHeader =
+        req.headers.authorization;
+
+    if (!authHeader) {
+
+        return res.status(401).json({
+            message: "Authentication required"
+        });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token =
+        authHeader.split(" ")[1];
+
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Attach user payload metadata containing id and role
+
+        const decoded =
+            jwt.verify(
+                token,
+                process.env.JWT_SECRET
+            );
+
+        req.user = decoded;
+
         next();
-    } catch (err) {
-        return res.status(401).json({ error: "Token signature validation failed." });
+
+    } catch (error) {
+
+        return res.status(401).json({
+            message: "Invalid or expired token"
+        });
     }
 }
 
-export function authorizeAdmin(req, res, next) {
-    if (req.user && req.user.role === 'admin') {
-        next();
-    } else {
-        return res.status(403).json({ error: "Access restricted. Admin credentials required." });
+function requireAdmin(req, res, next) {
+
+    if (req.user.role !== "admin") {
+
+        return res.status(403).json({
+            message: "Admin access required"
+        });
     }
+
+    next();
 }
+
+module.exports = {
+    authenticate,
+    requireAdmin
+};
