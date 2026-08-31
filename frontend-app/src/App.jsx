@@ -1,122 +1,69 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 
-function App() {
-  const [count, setCount] = useState(0)
+import PublicLayout from './components/PublicLayout';
+import AdminLayout from './components/AdminLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
+
+import BrowseJobs from './pages/BrowseJobs';
+import JobDetail from './pages/JobDetail';
+import ApplyJob from './pages/ApplyJob';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import MyApplications from './pages/MyApplications';
+import NotFound from './pages/NotFound';
+
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminJobForm from './pages/admin/JobForm';
+import AdminApplications from './pages/admin/Applications';
+
+import { restoreSession } from './features/auth/authSlice';
+
+export default function App() {
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const user = useSelector((state) => state.auth.user);
+
+  // A stored token is exchanged for the current user once, on first load.
+  useEffect(() => {
+    if (token && !user) dispatch(restoreSession());
+  }, [dispatch, token, user]);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      {/* Public board */}
+      <Route element={<PublicLayout />}>
+        <Route index element={<BrowseJobs />} />
+        <Route path="jobs/:id" element={<JobDetail />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
 
-      <div className="ticks"></div>
+        {/* Signed in, any role */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="jobs/:id/apply" element={<ApplyJob />} />
+          <Route path="applications" element={<MyApplications />} />
+        </Route>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <Route path="*" element={<NotFound />} />
+      </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/*
+        Admin area. AdminRoute redirects anyone who is not an admin, and the
+        matching API routes are guarded server-side, so there is no path in
+        which a candidate reaches admin data.
+      */}
+      <Route element={<AdminRoute />}>
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="jobs" element={<AdminDashboard />} />
+          <Route path="jobs/new" element={<AdminJobForm />} />
+          <Route path="jobs/:id/edit" element={<AdminJobForm />} />
+          <Route path="jobs/:id/applicants" element={<AdminApplications />} />
+          <Route path="applications" element={<AdminApplications />} />
+        </Route>
+      </Route>
+    </Routes>
+  );
 }
-
-export default App
