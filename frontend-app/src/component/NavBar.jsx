@@ -1,52 +1,57 @@
 import { Link } from "react-router-dom";
 
-function NavBar() {
-  const user = JSON.parse(
-    localStorage.getItem("user")
-  );
+export default function NavBar() {
 
-  function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    const user =
+        JSON.parse(
+            localStorage.getItem("user")
+        );
 
-    window.location.href = "/login";
-  }
+    function logout() {
 
-  return (
-    <nav>
-      <h2>JobBoard</h2>
+        localStorage.removeItem("token");
 
-      <Link to="/jobs">
-        Jobs
-      </Link>
+        localStorage.removeItem("user");
 
-      {!user && (
-        <>
-          <Link to="/login">
-            Login
-          </Link>
+        window.location.href =
+            "/login";
+    }
 
-          <Link to="/register">
-            Register
-          </Link>
-        </>
-      )}
+    return (
+        <nav>
 
-      {user && (
-        <>
-          {user.role === "admin" && (
-            <Link to="/admin">
-              Admin
+            <h2>JobBoard</h2>
+
+            <Link to="/jobs">
+                Jobs
             </Link>
-          )}
 
-          <button onClick={logout}>
-            Logout
-          </button>
-        </>
-      )}
-    </nav>
-  );
+            {!user && (
+                <>
+                    <Link to="/login">
+                        Login
+                    </Link>
+
+                    <Link to="/register">
+                        Register
+                    </Link>
+                </>
+            )}
+
+            {user && (
+                <>
+                    {user.role === "admin" && (
+                        <Link to="/admin">
+                            Admin
+                        </Link>
+                    )}
+
+                    <button onClick={logout}>
+                        Logout
+                    </button>
+                </>
+            )}
+
+        </nav>
+    );
 }
-
-export default NavBar;

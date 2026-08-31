@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+
+
+   {
+        "name": "Attach to Chrome",
+        "port": 9222,
+        "request": "attach",
+        "type": "chrome",
+        "webRoot": "${clean-job-board}"
+    },
+
+    { "name": "Launch Backend", "type": "node", "request": "launch", "program": "${clean-job-board}/api/app.js" },
+    { "name": "Launch Frontend", "type": "chrome", "request": "launch", "url": "http://localhost:5174" }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Whole Project",
+      "configurations": ["Launch Backend", "Launch Frontend"]
+    }
+  ]
+}

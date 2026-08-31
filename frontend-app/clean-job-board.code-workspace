@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "jobstack",
+			"path": "../jobstack"
+		}
+	],
+	"settings": {}
+}
